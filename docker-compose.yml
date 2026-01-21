@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Сервис Бэкенда (API)
+  backend:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app  # Прокидываем код внутрь, чтобы работало live-обновление (для разработки)
+    networks:
+      - credit_net
+
+  # Сервис Фронтенда (Streamlit)
+  frontend:
+    build: .
+    command: streamlit run frontend/ui.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
+    environment:
+      # Важно: здесь мы говорим фронтенду стучаться в сервис 'backend'
+      - API_URL=http://backend:8000
+    depends_on:
+      - backend
+    volumes:
+      - .:/app
+    networks:
+      - credit_net
+
+networks:
+  credit_net:
+    driver: bridge
